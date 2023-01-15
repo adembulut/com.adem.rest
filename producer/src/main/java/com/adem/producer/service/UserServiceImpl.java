@@ -58,10 +58,22 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Map<String, Integer> getUserMapById(long id) {
-        Map<String,Integer> map = new HashMap<>();
-        map.put("Test1",1);
-        map.put("Test11",11);
-        map.put("Test111",111);
+        Map<String, Integer> map = new HashMap<>();
+        map.put("Test1", 1);
+        map.put("Test11", 11);
+        map.put("Test111", 111);
+        return map;
+    }
+
+    @Override
+    public Map<String, List<User>> getStringUserListMap(long id, AuthenticationUser authUser) {
+        Map<String, List<User>> map = new HashMap<>();
+        List<User> userList = new ArrayList<>();
+        userList.add(new User(1, "adem", "bulut", 12, LocalDate.now()));
+        userList.add(new User(12, "adem", "bulut", 12, LocalDate.now()));
+        userList.add(new User(13, "adem", "bulut", 12, LocalDate.now()));
+        map.put("adem1", userList);
+        map.put("adem2", userList);
         return map;
     }
 

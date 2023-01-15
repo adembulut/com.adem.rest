@@ -16,6 +16,8 @@ public interface UserService {
 
     Map<String,Integer> getUserMapById(long id);
 
+    Map<String,List<User>> getStringUserListMap(long id , AuthenticationUser authUser);
+
     void saveUser(AuthenticationUser auth, String name, String surname, long id);
 
     void saveUser(AuthenticationUser auth, User user);
