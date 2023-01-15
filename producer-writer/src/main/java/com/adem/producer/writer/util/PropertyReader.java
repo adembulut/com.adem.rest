@@ -19,7 +19,7 @@ public class PropertyReader {
     }
 
     public static String getControllerDirectory() {
-        return "/Users/adembulut/projects/java/com.adem.rest.writer/src/main/java/com/adem/rest/writer/controller/";
+        return "/Users/adembulut/projects/java/com.adem.rest/producer/src/main/java/com/adem/producer/controller/";
     }
 
 
