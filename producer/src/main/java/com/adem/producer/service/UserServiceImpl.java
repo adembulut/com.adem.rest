@@ -94,6 +94,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void deleteUserById(AuthenticationUser authenticationUser, long id) {
+        logger.info("::deleteUser auth:{} id:{}",gson.toJson(authenticationUser),id);
+    }
+
+    @Override
     public School getSchool(AuthenticationUser auth, Map<String, String> userMapping) {
         logger.info("::getSchool auth:{} userMapping:{}", gson.toJson(auth), gson.toJson(userMapping));
         School school = new School();

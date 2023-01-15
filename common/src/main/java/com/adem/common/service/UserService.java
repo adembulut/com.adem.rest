@@ -24,5 +24,7 @@ public interface UserService {
 
     long getUserId(AuthenticationUser auth, String username);
 
+    void deleteUserById(AuthenticationUser authenticationUser, long id);
+
     School getSchool(AuthenticationUser auth, Map<String, String> userMapping);
 }

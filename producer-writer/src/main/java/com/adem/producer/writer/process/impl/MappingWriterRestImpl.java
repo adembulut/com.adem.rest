@@ -6,6 +6,7 @@ import com.adem.producer.writer.process.MappingWriter;
 import com.adem.producer.writer.util.PropertyReader;
 import freemarker.template.Configuration;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,6 +52,7 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         importSet.add(PostMapping.class);
         importSet.add(GetMapping.class);
         importSet.add(RequestParam.class);
+        importSet.add(DeleteMapping.class);
         importSet.add(io.swagger.v3.oas.annotations.Parameter.class);//for openAPi
 
         methodModel.setImportSet(importSet);
@@ -142,16 +144,18 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
 
     private String getMappingAnnotation(Method method) {
         String methodName = method.getName();
-        if (methodName.startsWith("get") || methodName.startsWith("is") || methodName.startsWith("equals") || methodName.startsWith("find")) {
-            if (isAvailableGetMappingForParameters(method.getParameters())) {
+        if (isAvailableGetOrDeleteMappingForParameters(method.getParameters())) {
+            if (methodName.startsWith("get") || methodName.startsWith("is") || methodName.startsWith("equals") || methodName.startsWith("find")) {
                 return "@GetMapping(\"" + getUrlName(methodName) + "\")";
+            } else if (methodName.startsWith("delete")) {
+                return "@DeleteMapping(\"" + getUrlName(methodName) + "\")";
             }
         }
         return "@PostMapping(\"" + getUrlName(methodName) + "\")";
     }
 
 
-    private boolean isAvailableGetMappingForParameters(Parameter[] parameters) {
+    private boolean isAvailableGetOrDeleteMappingForParameters(Parameter[] parameters) {
         for (Parameter parameter : parameters) {
             if (PropertyReader.existLoggedParameter() && PropertyReader.getLoggedParameter() == parameter.getType()) {
                 continue;
