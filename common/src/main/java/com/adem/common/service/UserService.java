@@ -1,0 +1,22 @@
+package com.adem.common.service;
+
+import com.adem.common.model.AuthenticationUser;
+import com.adem.common.model.School;
+import com.adem.common.model.User;
+
+import java.util.List;
+import java.util.Map;
+
+public interface UserService {
+    User findUserById(AuthenticationUser auth, long id);
+
+    List<User> getUserList(String name, String surname, AuthenticationUser auth);
+
+    void saveUser(AuthenticationUser auth, String name, String surname, long id);
+
+    void saveUser(AuthenticationUser auth, User user);
+
+    long getUserId(AuthenticationUser auth, String username);
+
+    School getSchool(AuthenticationUser auth, Map<String, String> userMapping);
+}
