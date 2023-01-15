@@ -14,6 +14,8 @@ public interface UserService {
 
     List<List<User>> getNestedUserList(AuthenticationUser authenticationUser, String name);
 
+    Map<String,Integer> getUserMapById(long id);
+
     void saveUser(AuthenticationUser auth, String name, String surname, long id);
 
     void saveUser(AuthenticationUser auth, User user);

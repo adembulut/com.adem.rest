@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +54,15 @@ public class UserServiceImpl implements UserService {
         list.add(new User(13, "adem", "bulut", 12, LocalDate.now()));
         listOfList.add(list);
         return listOfList;
+    }
+
+    @Override
+    public Map<String, Integer> getUserMapById(long id) {
+        Map<String,Integer> map = new HashMap<>();
+        map.put("Test1",1);
+        map.put("Test11",11);
+        map.put("Test111",111);
+        return map;
     }
 
     @Override
