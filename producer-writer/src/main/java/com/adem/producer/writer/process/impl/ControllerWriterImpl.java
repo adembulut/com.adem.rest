@@ -3,6 +3,7 @@ package com.adem.producer.writer.process.impl;
 import com.adem.producer.writer.exception.MethodNotAvailableException;
 import com.adem.producer.writer.model.ControllerResponse;
 import com.adem.producer.writer.model.MethodModel;
+import com.adem.producer.writer.model.RestWriterConfiguration;
 import com.adem.producer.writer.process.ControllerWriter;
 import com.adem.producer.writer.process.MappingWriter;
 import freemarker.template.Configuration;
@@ -11,21 +12,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.*;
 
 public class ControllerWriterImpl extends BaseWriter implements ControllerWriter {
     private final MappingWriter mappingWriter;
+    private final RestWriterConfiguration configuration;
 
-    public ControllerWriterImpl(MappingWriter mappingWriter) {
+    public ControllerWriterImpl(RestWriterConfiguration configuration, MappingWriter mappingWriter) {
         this.mappingWriter = mappingWriter;
+        this.configuration = configuration;
     }
 
     @Override
-    public ControllerResponse processController(Class<?> serviceClass, String packageName, Configuration freemarkerConfiguration) throws Exception {
+    public ControllerResponse processController(Class<?> serviceClass, String packageName, Configuration freemarkerConfiguration) {
         if (serviceClass == null || freemarkerConfiguration == null) {
-            throw new IllegalArgumentException("Service and configuration must not be null");
+            throw new NullPointerException("Service and configuration must not be null");
         }
         String fieldName = getFieldName(serviceClass.getSimpleName());
         String baseUrl = getUrlName(serviceClass.getSimpleName());
@@ -48,7 +52,13 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
             }
         }
 
-        Template template = freemarkerConfiguration.getTemplate("controller.ftl");
+
+        Template template;
+        try {
+            template = freemarkerConfiguration.getTemplate("controller.ftl");
+        } catch (IOException e) {
+            throw new MethodNotAvailableException("Controller not created!", e);
+        }
         Map<String, Object> modelMap = new HashMap<>();
         modelMap.put("importSet", getImportList(rawImportSet));
         modelMap.put("className", serviceClass.getSimpleName());
@@ -60,7 +70,11 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
 
 
         StringWriter writer = new StringWriter();
-        template.process(modelMap, writer);
+        try {
+            template.process(modelMap, writer);
+        } catch (Exception e) {
+            throw new MethodNotAvailableException("Controller not created!", e);
+        }
         response.setOutput(writer.toString());
         return response;
     }

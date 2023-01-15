@@ -2,8 +2,8 @@ package com.adem.producer.writer.process.impl;
 
 import com.adem.producer.writer.model.MethodModel;
 import com.adem.producer.writer.model.ParameterModel;
+import com.adem.producer.writer.model.RestWriterConfiguration;
 import com.adem.producer.writer.process.MappingWriter;
-import com.adem.producer.writer.util.PropertyReader;
 import freemarker.template.Configuration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +18,12 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
+public class MappingWriterImpl extends BaseWriter implements MappingWriter {
+    private final RestWriterConfiguration restWriterConfiguration;
+
+    public MappingWriterImpl(RestWriterConfiguration restWriterConfiguration) {
+        this.restWriterConfiguration = restWriterConfiguration;
+    }
 
     @Override
     public MethodModel processMapping(Method method, String serviceFieldName, Configuration freemarkerConfiguration) {
@@ -118,16 +123,16 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
                 parameterModel.setType(createReturnTypeNameGeneric(parameter.getParameterizedType()));
                 parameterModel.setName(parameter.getName());
                 parameterModel.setParameterClass(parameter.getType());
-                boolean isLoggedParameter = parameter.getType() == PropertyReader.getLoggedParameter();
+                boolean isLoggedParameter = parameter.getType() == restWriterConfiguration.getAuthenticationParameter();
                 parameterModel.setAnnotation(isLoggedParameter ? "@Parameter(hidden = true) " : getParameterAnnotation(parameter));
                 parameterModelList.add(parameterModel);
             }
         }
         List<ParameterModel> finalPropertyModelList = new ArrayList<>();
-        if (PropertyReader.existLoggedParameter()) {
-            parameterModelList.stream().filter(x -> x.getParameterClass() == PropertyReader.getLoggedParameter()).findFirst().ifPresent(finalPropertyModelList::add);
+        if (restWriterConfiguration.getAuthenticationParameter() != null) {
+            parameterModelList.stream().filter(x -> x.getParameterClass() == restWriterConfiguration.getAuthenticationParameter()).findFirst().ifPresent(finalPropertyModelList::add);
         }
-        finalPropertyModelList.addAll(parameterModelList.stream().filter(x -> x.getParameterClass() != PropertyReader.getLoggedParameter()).collect(Collectors.toList()));
+        finalPropertyModelList.addAll(parameterModelList.stream().filter(x -> x.getParameterClass() != restWriterConfiguration.getAuthenticationParameter()).collect(Collectors.toList()));
         return finalPropertyModelList;
     }
 
@@ -157,7 +162,7 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
 
     private boolean isAvailableGetOrDeleteMappingForParameters(Parameter[] parameters) {
         for (Parameter parameter : parameters) {
-            if (PropertyReader.existLoggedParameter() && PropertyReader.getLoggedParameter() == parameter.getType()) {
+            if (parameter.getType() == restWriterConfiguration.getAuthenticationParameter()) {
                 continue;
             }
             if (parameter.getType().isPrimitive()) {
