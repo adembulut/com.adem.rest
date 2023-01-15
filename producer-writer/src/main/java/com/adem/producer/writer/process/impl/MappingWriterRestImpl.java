@@ -7,6 +7,7 @@ import com.adem.producer.writer.process.MappingWriter;
 import com.adem.producer.writer.util.PropertyReader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.reflections.Reflections;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,8 +17,11 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.reflections.ReflectionUtils.Methods;
 
 public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
 
@@ -41,11 +45,10 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         methodModel.setServiceParameterListSorted(parameterList.stream().sorted(Comparator.comparingInt(ParameterModel::getOrder)).collect(Collectors.toList()));
         methodModel.setMethodName(method.getName());
         methodModel.setServiceFieldName(serviceFieldName);
-        methodModel.setReturnTypeName(createReturnTypeName(returnClass));
+        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method));
         methodModel.setVoidMethod(returnClass == Void.class || returnClass == void.class);
         methodModel.setServiceMethodName(method.getName());
         methodModel.setAnnotationName(getMappingAnnotation(method));
-
 
         try {
             Template template = freemarkerConfiguration.getTemplate("mapping.ftl");
@@ -68,7 +71,25 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         }
     }
 
-    private String createReturnTypeName(Class<?> returnClass) {
+    private String createReturnTypeNameGeneric(Method method) {
+        Class<?> returnClass = method.getReturnType();
+        if (!returnClass.isPrimitive()) {
+            if (returnClass.getTypeParameters().length > 0) {
+                if(returnClass.getTypeParameters().length==1){
+                    Type innerClass = ((ParameterizedType)method.getGenericReturnType()).getActualTypeArguments()[0];
+                    if(innerClass instanceof ParameterizedType){
+                        throw new IllegalArgumentException("Nested Generic types are not currently supported.Type:[" + method.getGenericReturnType() + "]");
+                    }
+                    return returnClass.getSimpleName()+"<"+((Class<?>)innerClass).getSimpleName()+">";
+                }
+                throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
+            }
+        }
+        return createReturnTypeNameGeneric(method.getReturnType());
+    }
+
+
+    private String createReturnTypeNameGeneric(Class<?> returnClass) {
         if (returnClass == null) {
             return "UNKNOWN";
         }
@@ -91,9 +112,13 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
             }
             return "PRIMITIVE_" + returnClass.getName();
         } else {
+            if (returnClass.getTypeParameters().length > 0) {
+                throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
+            }
             return returnClass.getSimpleName();
         }
     }
+
 
     private List<ParameterModel> getParameterModelList(Parameter[] parameterArray) {
         List<ParameterModel> parameterModelList = new ArrayList<>();
@@ -105,7 +130,7 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
                 }
                 ParameterModel parameterModel = new ParameterModel();
                 parameterModel.setOrder(i);
-                parameterModel.setType(createReturnTypeName(parameter.getType()));
+                parameterModel.setType(createReturnTypeNameGeneric(parameter.getType()));
                 parameterModel.setName(parameter.getName());
                 parameterModel.setParameterClass(parameter.getType());
                 boolean isLoggedParameter = parameter.getType() == PropertyReader.getLoggedParameter();

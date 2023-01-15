@@ -32,7 +32,6 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         Set<Class<?>> rawImportSet = new HashSet<>();
         rawImportSet.add(serviceClass);
 
-
         ControllerResponse response = new ControllerResponse();
         response.setIgnoreMappingMap(new HashMap<>());
 

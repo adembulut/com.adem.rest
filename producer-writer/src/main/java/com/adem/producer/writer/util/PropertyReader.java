@@ -23,4 +23,7 @@ public class PropertyReader {
     }
 
 
+    public static String getPackageName() {
+        return "com.adem.producer.controller";
+    }
 }

@@ -31,7 +31,7 @@ public class CodeWriter {
         ControllerWriter controllerWriter = new ControllerWriterImpl(new MappingWriterRestImpl());
 
         Class<?> serviceClass = UserService.class;
-        String packageName = "com.example.invoker.controller";
+        String packageName = PropertyReader.getPackageName();
 
 
         ControllerResponse response = controllerWriter.processController(serviceClass, packageName, freeMarkerConfigurer.getConfiguration());
