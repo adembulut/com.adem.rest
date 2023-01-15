@@ -105,8 +105,9 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
                     }
                     return returnClass.getSimpleName() + "<" + ((Class<?>) innerClass).getSimpleName() + ">";
                 } else if (innerClassLength == 2) {
-                    System.out.println();
-                    throw new IllegalArgumentException("Two generic types are not supported as "+(isParameter?"Parameter":"Return Type")+".Type:[" + genericReturnType + "]");
+                    Type firstClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
+                    Type secondClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[1];
+                    return returnClass.getSimpleName()+"<"+createReturnTypeNameGeneric(firstClass,isParameter)+","+createReturnTypeNameGeneric(secondClass,isParameter)+">";
                 }
             }
         }
