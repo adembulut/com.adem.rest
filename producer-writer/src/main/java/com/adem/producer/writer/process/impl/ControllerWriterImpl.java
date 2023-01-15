@@ -1,6 +1,8 @@
 package com.adem.producer.writer.process.impl;
 
+import com.adem.producer.writer.exception.MethodNotAvailableException;
 import com.adem.producer.writer.model.ControllerResponse;
+import com.adem.producer.writer.model.MethodModel;
 import com.adem.producer.writer.process.ControllerWriter;
 import com.adem.producer.writer.process.MappingWriter;
 import freemarker.template.Configuration;
@@ -25,7 +27,6 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         if (serviceClass == null || freemarkerConfiguration == null) {
             throw new IllegalArgumentException("Service and configuration must not be null");
         }
-        String beanName = getFieldName(serviceClass.getSimpleName());
         String fieldName = getFieldName(serviceClass.getSimpleName());
         String baseUrl = getUrlName(serviceClass.getSimpleName());
         List<String> mappingCodes = new ArrayList<>();
@@ -38,8 +39,10 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         Method[] methods = serviceClass.getMethods();
         for (Method method : methods) {
             try {
-                String methodOutput = mappingWriter.processMapping(method, fieldName, freemarkerConfiguration, rawImportSet);
-                mappingCodes.add(methodOutput);
+                MethodModel methodModel = mappingWriter.processMapping(method, fieldName, freemarkerConfiguration);
+
+                mappingCodes.add(processMethodCode(freemarkerConfiguration, methodModel));
+                rawImportSet.addAll(methodModel.getImportSet());
             } catch (Exception e) {
                 response.getIgnoreMappingMap().put(method, e.getMessage());
             }
@@ -60,6 +63,23 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         template.process(modelMap, writer);
         response.setOutput(writer.toString());
         return response;
+    }
+
+    private String processMethodCode(Configuration configuration, MethodModel methodModel) throws MethodNotAvailableException {
+        try {
+            Template template = configuration.getTemplate("mapping.ftl");
+            Map<String, Object> modelMap = new HashMap<>();
+            modelMap.put("method", methodModel);
+
+
+            StringWriter writer = new StringWriter();
+            template.process(modelMap, writer);
+
+            return writer.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new MethodNotAvailableException(e.getMessage());
+        }
     }
 
     private List<Class<?>> getImportList(Set<Class<?>> raw) {

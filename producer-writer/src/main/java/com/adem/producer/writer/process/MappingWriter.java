@@ -1,11 +1,12 @@
 package com.adem.producer.writer.process;
 
 import com.adem.producer.writer.exception.MethodNotAvailableException;
+import com.adem.producer.writer.model.MethodModel;
 import freemarker.template.Configuration;
 
 import java.lang.reflect.Method;
 import java.util.Set;
 
 public interface MappingWriter {
-    String processMapping(Method method, String serviceFieldName, Configuration freemarkerConfiguration, Set<Class<?>> importSet) throws MethodNotAvailableException;
+    MethodModel processMapping(Method method, String serviceFieldName, Configuration freemarkerConfiguration) throws MethodNotAvailableException;
 }

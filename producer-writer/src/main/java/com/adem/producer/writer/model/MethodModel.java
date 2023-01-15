@@ -1,6 +1,7 @@
 package com.adem.producer.writer.model;
 
 import java.util.List;
+import java.util.Set;
 
 public class MethodModel {
     private String methodName;
@@ -11,6 +12,15 @@ public class MethodModel {
     private List<ParameterModel> parameterList;
     private List<ParameterModel> serviceParameterListSorted;
     private boolean voidMethod;
+    private Set<Class<?>> importSet;
+
+    public Set<Class<?>> getImportSet() {
+        return importSet;
+    }
+
+    public void setImportSet(Set<Class<?>> importSet) {
+        this.importSet = importSet;
+    }
 
     public boolean isVoidMethod() {
         return voidMethod;
