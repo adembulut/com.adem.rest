@@ -45,7 +45,8 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         methodModel.setServiceParameterListSorted(parameterList.stream().sorted(Comparator.comparingInt(ParameterModel::getOrder)).collect(Collectors.toList()));
         methodModel.setMethodName(method.getName());
         methodModel.setServiceFieldName(serviceFieldName);
-        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method));
+        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method.getGenericReturnType()));
+//        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method));
         methodModel.setVoidMethod(returnClass == Void.class || returnClass == void.class);
         methodModel.setServiceMethodName(method.getName());
         methodModel.setAnnotationName(getMappingAnnotation(method));
@@ -69,6 +70,54 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
             e.printStackTrace();
             throw new MethodNotAvailableException(e.getMessage());
         }
+    }
+
+    private String createReturnTypeNameGeneric(Type genericReturnType) {
+        Class<?> returnClass = null;
+        try {
+            returnClass = (Class<?>) genericReturnType;
+            if (returnClass == Void.class || returnClass == void.class) {
+                return "?";
+            }
+            if (returnClass.isPrimitive()) {
+                if (returnClass == int.class) {
+                    return "Integer";
+                } else if (returnClass == boolean.class) {
+                    return "Boolean";
+                } else if (returnClass == double.class) {
+                    return "Double";
+                } else if (returnClass == float.class) {
+                    return "Float";
+                } else if (returnClass == long.class) {
+                    return "Long";
+                } else if (returnClass == char.class) {
+                    return "Character";
+                }
+                return "PRIMITIVE_" + returnClass.getName();
+            } else {
+                if (returnClass.getTypeParameters().length > 0) {
+                    throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
+                }
+                return returnClass.getSimpleName();
+            }
+        }catch (ClassCastException e){
+            if(genericReturnType instanceof ParameterizedType){
+                int innerClassLength = ((ParameterizedType)genericReturnType).getActualTypeArguments().length;
+                returnClass = ((Class<?>)((ParameterizedType)genericReturnType).getRawType());
+                if(innerClassLength==1) {
+                    Type innerClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
+                    if (innerClass instanceof ParameterizedType) {
+                        return returnClass.getSimpleName()+"<"+createReturnTypeNameGeneric(innerClass)+">";
+                    }
+                    return returnClass.getSimpleName() + "<" + ((Class<?>) innerClass).getSimpleName() + ">";
+                }else if(innerClassLength==2){
+                    System.out.println();
+                    throw new IllegalArgumentException("Two generic types are not currently supported.Type:[" + genericReturnType + "]");
+                }
+            }
+        }
+
+        return "UNKNOWN";
     }
 
     private String createReturnTypeNameGeneric(Method method) {

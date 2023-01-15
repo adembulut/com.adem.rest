@@ -11,6 +11,7 @@ public interface UserService {
     List<User> getUserList(String name, String surname, AuthenticationUser auth);
 
     User findUserById(AuthenticationUser auth, long id);
+
     List<List<User>> getNestedUserList(AuthenticationUser authenticationUser, String name);
 
     void saveUser(AuthenticationUser auth, String name, String surname, long id);

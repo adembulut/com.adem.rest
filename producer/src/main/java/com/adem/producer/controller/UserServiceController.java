@@ -18,6 +18,12 @@ public class UserServiceController {
     private UserService userService;
 
 
+    @PostMapping("find-user-by-id")
+    public ResponseEntity<User> findUserById(@Parameter(hidden = true) AuthenticationUser auth,
+                                             @RequestParam("id") Long id) {
+        return ResponseEntity.ok(userService.findUserById(auth, id));
+    }
+
     @GetMapping("get-user-list")
     public ResponseEntity<List<User>> getUserList(@Parameter(hidden = true) AuthenticationUser auth,
                                                   @RequestParam("name") String name,
@@ -25,10 +31,10 @@ public class UserServiceController {
         return ResponseEntity.ok(userService.getUserList(name, surname, auth));
     }
 
-    @PostMapping("find-user-by-id")
-    public ResponseEntity<User> findUserById(@Parameter(hidden = true) AuthenticationUser auth,
-                                             @RequestParam("id") Long id) {
-        return ResponseEntity.ok(userService.findUserById(auth, id));
+    @GetMapping("get-nested-user-list")
+    public ResponseEntity<List<List<User>>> getNestedUserList(@Parameter(hidden = true) AuthenticationUser authenticationUser,
+                                                              @RequestParam("name") String name) {
+        return ResponseEntity.ok(userService.getNestedUserList(authenticationUser, name));
     }
 
     @PostMapping("save-user")
@@ -38,7 +44,7 @@ public class UserServiceController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("save-user")
+    @PostMapping("save-user-1")
     public ResponseEntity<?> saveUser(@Parameter(hidden = true) AuthenticationUser auth,
                                       @RequestParam("name") String name,
                                       @RequestParam("surname") String surname,
