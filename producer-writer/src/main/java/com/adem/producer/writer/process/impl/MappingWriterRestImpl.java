@@ -7,7 +7,6 @@ import com.adem.producer.writer.process.MappingWriter;
 import com.adem.producer.writer.util.PropertyReader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
-import org.reflections.Reflections;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +19,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.reflections.ReflectionUtils.Methods;
 
 public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
 
@@ -45,7 +42,7 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         methodModel.setServiceParameterListSorted(parameterList.stream().sorted(Comparator.comparingInt(ParameterModel::getOrder)).collect(Collectors.toList()));
         methodModel.setMethodName(method.getName());
         methodModel.setServiceFieldName(serviceFieldName);
-        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method.getGenericReturnType()));
+        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method.getGenericReturnType(), false));
 //        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method));
         methodModel.setVoidMethod(returnClass == Void.class || returnClass == void.class);
         methodModel.setServiceMethodName(method.getName());
@@ -72,8 +69,8 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         }
     }
 
-    private String createReturnTypeNameGeneric(Type genericReturnType) {
-        Class<?> returnClass = null;
+    private String createReturnTypeNameGeneric(Type genericReturnType, boolean isParameter) {
+        Class<?> returnClass;
         try {
             returnClass = (Class<?>) genericReturnType;
             if (returnClass == Void.class || returnClass == void.class) {
@@ -95,24 +92,21 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
                 }
                 return "PRIMITIVE_" + returnClass.getName();
             } else {
-                if (returnClass.getTypeParameters().length > 0) {
-                    throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
-                }
                 return returnClass.getSimpleName();
             }
-        }catch (ClassCastException e){
-            if(genericReturnType instanceof ParameterizedType){
-                int innerClassLength = ((ParameterizedType)genericReturnType).getActualTypeArguments().length;
-                returnClass = ((Class<?>)((ParameterizedType)genericReturnType).getRawType());
-                if(innerClassLength==1) {
+        } catch (ClassCastException e) {
+            if (genericReturnType instanceof ParameterizedType) {
+                int innerClassLength = ((ParameterizedType) genericReturnType).getActualTypeArguments().length;
+                returnClass = ((Class<?>) ((ParameterizedType) genericReturnType).getRawType());
+                if (innerClassLength == 1) {
                     Type innerClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
                     if (innerClass instanceof ParameterizedType) {
-                        return returnClass.getSimpleName()+"<"+createReturnTypeNameGeneric(innerClass)+">";
+                        return returnClass.getSimpleName() + "<" + createReturnTypeNameGeneric(innerClass, isParameter) + ">";
                     }
                     return returnClass.getSimpleName() + "<" + ((Class<?>) innerClass).getSimpleName() + ">";
-                }else if(innerClassLength==2){
+                } else if (innerClassLength == 2) {
                     System.out.println();
-                    throw new IllegalArgumentException("Two generic types are not currently supported.Type:[" + genericReturnType + "]");
+                    throw new IllegalArgumentException("Two generic types are not supported as "+(isParameter?"Parameter":"Return Type")+".Type:[" + genericReturnType + "]");
                 }
             }
         }
@@ -120,66 +114,17 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
         return "UNKNOWN";
     }
 
-    private String createReturnTypeNameGeneric(Method method) {
-        Class<?> returnClass = method.getReturnType();
-        if (!returnClass.isPrimitive()) {
-            if (returnClass.getTypeParameters().length > 0) {
-                if(returnClass.getTypeParameters().length==1){
-                    Type innerClass = ((ParameterizedType)method.getGenericReturnType()).getActualTypeArguments()[0];
-                    if(innerClass instanceof ParameterizedType){
-                        throw new IllegalArgumentException("Nested Generic types are not currently supported.Type:[" + method.getGenericReturnType() + "]");
-                    }
-                    return returnClass.getSimpleName()+"<"+((Class<?>)innerClass).getSimpleName()+">";
-                }
-                throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
-            }
-        }
-        return createReturnTypeNameGeneric(method.getReturnType());
-    }
-
-
-    private String createReturnTypeNameGeneric(Class<?> returnClass) {
-        if (returnClass == null) {
-            return "UNKNOWN";
-        }
-        if (returnClass == Void.class || returnClass == void.class) {
-            return "?";
-        }
-        if (returnClass.isPrimitive()) {
-            if (returnClass == int.class) {
-                return "Integer";
-            } else if (returnClass == boolean.class) {
-                return "Boolean";
-            } else if (returnClass == double.class) {
-                return "Double";
-            } else if (returnClass == float.class) {
-                return "Float";
-            } else if (returnClass == long.class) {
-                return "Long";
-            } else if (returnClass == char.class) {
-                return "Character";
-            }
-            return "PRIMITIVE_" + returnClass.getName();
-        } else {
-            if (returnClass.getTypeParameters().length > 0) {
-                throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + returnClass + "]");
-            }
-            return returnClass.getSimpleName();
-        }
-    }
-
-
     private List<ParameterModel> getParameterModelList(Parameter[] parameterArray) {
         List<ParameterModel> parameterModelList = new ArrayList<>();
         if (parameterArray != null && parameterArray.length > 0) {
             for (int i = 0, parameterArrayLength = parameterArray.length; i < parameterArrayLength; i++) {
                 Parameter parameter = parameterArray[i];
                 if (isGeneric(parameter)) {
-                    throw new IllegalArgumentException("Generic types are not currently supported.Type:[" + parameter.getType() + "]");
+                    throw new IllegalArgumentException("Generic types are not currently supported as parameter.Type:[" + parameter.getType() + "]");
                 }
                 ParameterModel parameterModel = new ParameterModel();
                 parameterModel.setOrder(i);
-                parameterModel.setType(createReturnTypeNameGeneric(parameter.getType()));
+                parameterModel.setType(createReturnTypeNameGeneric(parameter.getParameterizedType(), true));
                 parameterModel.setName(parameter.getName());
                 parameterModel.setParameterClass(parameter.getType());
                 boolean isLoggedParameter = parameter.getType() == PropertyReader.getLoggedParameter();
@@ -195,18 +140,6 @@ public class MappingWriterRestImpl extends BaseWriter implements MappingWriter {
             }
         }
         finalPropertyModelList.addAll(parameterModelList.stream().filter(x -> x.getParameterClass() != PropertyReader.getLoggedParameter()).collect(Collectors.toList()));
-
-
-//        if(PropertyReader.existLoggedParameter()) {
-//            for (int i = 0; i < parameterModelList.size(); i++) {
-//                ParameterModel parameter = parameterModelList.get(i);
-//                Class<?> type = parameter.getParameterClass();
-//                if(type==PropertyReader.getLoggedParameter() && i!=0){
-//
-//                    throw new IllegalArgumentException("Logged parameter supporting only first");
-//                }
-//            }
-//        }
         return finalPropertyModelList;
     }
 
