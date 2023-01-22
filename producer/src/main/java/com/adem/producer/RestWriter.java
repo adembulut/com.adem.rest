@@ -14,7 +14,7 @@ public class RestWriter {
                         .authenticationParameter(AuthenticationUser.class)
                         .controllerPackageName("com.adem.producer.controller")
                         .exportJavaFileToPackage(true)
-                        .controllerAbsolutePath("/Users/adembulut/projects/java/com.adem.rest/producer/src/main/java/com/adem/producer/controller/")
+                        .controllerAbsolutePath(args[0])
                         .build();
 
         RestControllerWriter writer = new RestControllerWriter(configuration);
