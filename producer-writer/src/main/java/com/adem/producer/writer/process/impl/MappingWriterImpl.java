@@ -46,12 +46,9 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
         methodModel.setVoidMethod(returnClass == Void.class || returnClass == void.class);
         methodModel.setServiceMethodName(method.getName());
         methodModel.setAnnotationName(getMappingAnnotation(method));
-
-//        addClassToCollection(returnClass,importSet);
-        addTypeToClassCollection(method.getGenericReturnType(),importSet);
-
+        addTypeToImportSet(method.getGenericReturnType(),importSet);
         for (Class<?> parameterType : method.getParameterTypes()) {
-            addClassToCollection(parameterType,importSet);
+            addClassToImportSet(parameterType,importSet);
         }
         importSet.add(ResponseEntity.class);
         importSet.add(PostMapping.class);
@@ -66,7 +63,7 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
 
     private String createReturnTypeNameGeneric(Type genericReturnType,Set<Class<?>> importSet) {
         if(importSet!=null) {
-            addTypeToClassCollection(genericReturnType, importSet);
+            addTypeToImportSet(genericReturnType, importSet);
         }
         Class<?> returnClass;
         try {

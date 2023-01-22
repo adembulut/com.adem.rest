@@ -2,17 +2,17 @@ package com.adem.producer.writer.process.impl;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public abstract class BaseWriter {
-    private final Set<String> classDefaultMethods =new HashSet<>(Arrays.asList("hashCode","toString","equals","wait","notify","notifyAll","getClass"));
+    private final Set<String> classDefaultMethods = new HashSet<>(Arrays.asList("hashCode", "toString", "equals", "wait", "notify", "notifyAll", "getClass"));
     private final Map<Class<?>, Class<?>> primitiveWrapperMap = new HashMap<>() {
         private static final long serialVersionUID = 5851119397623390011L;
 
@@ -28,9 +28,12 @@ public abstract class BaseWriter {
             put(void.class, Void.class);
         }
     };
+    private final Set<String> ignoredImportSet = new HashSet<>(Arrays.asList(
+            "boolean", "char", "byte", "short", "int", "long", "float", "double", "void", "Void"
+    ));
 
-    public boolean isDefaultMethod(Method method){
-        if(method==null){
+    public boolean isDefaultMethod(Method method) {
+        if (method == null) {
             return false;
         }
         return classDefaultMethods.contains(method.getName());
@@ -87,26 +90,47 @@ public abstract class BaseWriter {
         return primitiveWrapperMap.get(zClass);
     }
 
-    public void addClassToCollection(Class<?> zClass, Collection<Class<?>> collection){
-        if(zClass==null || collection==null){
+    public void addClassToImportSet(Class<?> zClass, Collection<Class<?>> collection) {
+        if (zClass == null || collection == null) {
             return;
         }
 
         collection.add(zClass);
     }
-    public void addParameterToClassCollection(Parameter parameter, Collection<Class<?>> collection){
-        if(parameter==null || collection==null){
+
+    public void addParameterToImportSet(Parameter parameter, Collection<Class<?>> collection) {
+        if (parameter == null || collection == null) {
             return;
         }
 
         collection.add(parameter.getType());
     }
 
-    public void addTypeToClassCollection(Type type, Collection<Class<?>> collection){
-        if(type==null || collection==null){
+
+    public void addTypeToImportSet(Type type, Collection<Class<?>> collection) {
+        if (type == null || collection == null) {
             return;
         }
 
-        collection.add(type.getClass());
+        if (ignoredImportSet.contains(type.getTypeName())) {
+            return;
+        }
+
+        if (type instanceof ParameterizedType parameterizedType) {
+            if (parameterizedType.getActualTypeArguments() != null && parameterizedType.getActualTypeArguments().length > 0) {
+                for (Type actualTypeArgument : parameterizedType.getActualTypeArguments()) {
+                    addTypeToImportSet(actualTypeArgument, collection);
+                }
+            }
+            addClassToImportSet((Class<?>) parameterizedType.getRawType(), collection);
+        } else {
+            if(((Class<?>) type).isArray()){
+                Class<?> componentType = ((Class<?>) type).getComponentType();
+                addClassToImportSet(componentType,collection);
+                System.out.println();
+            }else {
+                addClassToImportSet((Class<?>)type, collection);
+            }
+        }
     }
 }
