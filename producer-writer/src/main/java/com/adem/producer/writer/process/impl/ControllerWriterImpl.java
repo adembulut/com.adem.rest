@@ -43,6 +43,9 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         Method[] methods = serviceClass.getMethods();
         for (Method method : methods) {
             try {
+                if(isDefaultMethod(method)){
+                    continue;
+                }
                 MethodModel methodModel = mappingWriter.processMapping(method, fieldName, freemarkerConfiguration);
 
                 mappingCodes.add(processMethodCode(freemarkerConfiguration, methodModel));

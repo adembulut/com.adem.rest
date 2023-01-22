@@ -33,6 +33,7 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
 
 
         List<ParameterModel> parameterList = getParameterModelList(method.getParameters());
+        Set<Class<?>> importSet = new HashSet<>();
 
         Class<?> returnClass = method.getReturnType();
 
@@ -41,17 +42,16 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
         methodModel.setServiceParameterListSorted(parameterList.stream().sorted(Comparator.comparingInt(ParameterModel::getOrder)).collect(Collectors.toList()));
         methodModel.setMethodName(method.getName());
         methodModel.setServiceFieldName(serviceFieldName);
-        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method.getGenericReturnType()));
+        methodModel.setReturnTypeName(createReturnTypeNameGeneric(method.getGenericReturnType(),importSet));
         methodModel.setVoidMethod(returnClass == Void.class || returnClass == void.class);
         methodModel.setServiceMethodName(method.getName());
         methodModel.setAnnotationName(getMappingAnnotation(method));
 
-        Set<Class<?>> importSet = new HashSet<>();
-        if (returnClass != Void.class) {
-            importSet.add(returnClass);
-        }
-        for (ParameterModel parameter : parameterList) {
-            importSet.add(parameter.getParameterClass());
+//        addClassToCollection(returnClass,importSet);
+        addTypeToClassCollection(method.getGenericReturnType(),importSet);
+
+        for (Class<?> parameterType : method.getParameterTypes()) {
+            addClassToCollection(parameterType,importSet);
         }
         importSet.add(ResponseEntity.class);
         importSet.add(PostMapping.class);
@@ -64,28 +64,22 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
         return methodModel;
     }
 
-    private String createReturnTypeNameGeneric(Type genericReturnType) {
+    private String createReturnTypeNameGeneric(Type genericReturnType,Set<Class<?>> importSet) {
+        if(importSet!=null) {
+            addTypeToClassCollection(genericReturnType, importSet);
+        }
         Class<?> returnClass;
         try {
             returnClass = (Class<?>) genericReturnType;
             if (returnClass == Void.class || returnClass == void.class) {
                 return "?";
             }
-            if (returnClass.isPrimitive()) {
-                if (returnClass == int.class) {
-                    return "Integer";
-                } else if (returnClass == boolean.class) {
-                    return "Boolean";
-                } else if (returnClass == double.class) {
-                    return "Double";
-                } else if (returnClass == float.class) {
-                    return "Float";
-                } else if (returnClass == long.class) {
-                    return "Long";
-                } else if (returnClass == char.class) {
-                    return "Character";
+            if (isPrimitive(returnClass)) {
+                Class<?> wrapper = getWrapperClass(returnClass);
+                if(wrapper!=null){
+                    return wrapper.getSimpleName();
                 }
-                return "PRIMITIVE_" + returnClass.getName();
+                return "PRIMITIVE_"+returnClass.getName();
             } else {
                 return returnClass.getSimpleName();
             }
@@ -96,18 +90,18 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
                 if (innerClassLength == 1) {
                     Type innerClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
                     if (innerClass instanceof ParameterizedType) {
-                        return returnClass.getSimpleName() + "<" + createReturnTypeNameGeneric(innerClass) + ">";
+                        return returnClass.getSimpleName() + "<" + createReturnTypeNameGeneric(innerClass,importSet) + ">";
                     }
                     return returnClass.getSimpleName() + "<" + ((Class<?>) innerClass).getSimpleName() + ">";
                 } else if (innerClassLength == 2) {
                     Type firstClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
                     Type secondClass = ((ParameterizedType) genericReturnType).getActualTypeArguments()[1];
-                    return returnClass.getSimpleName() + "<" + createReturnTypeNameGeneric(firstClass) + "," + createReturnTypeNameGeneric(secondClass) + ">";
+                    return returnClass.getSimpleName() + "<" + createReturnTypeNameGeneric(firstClass,importSet) + "," + createReturnTypeNameGeneric(secondClass,importSet) + ">";
                 }
             }
         }
 
-        return "UNKNOWN";
+        return genericReturnType.getTypeName();
     }
 
     private List<ParameterModel> getParameterModelList(Parameter[] parameterArray) {
@@ -120,7 +114,7 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
                 }
                 ParameterModel parameterModel = new ParameterModel();
                 parameterModel.setOrder(i);
-                parameterModel.setType(createReturnTypeNameGeneric(parameter.getParameterizedType()));
+                parameterModel.setType(createReturnTypeNameGeneric(parameter.getParameterizedType(),null));
                 parameterModel.setName(parameter.getName());
                 parameterModel.setParameterClass(parameter.getType());
                 boolean isLoggedParameter = parameter.getType() == restWriterConfiguration.getAuthenticationParameter();
@@ -158,6 +152,7 @@ public class MappingWriterImpl extends BaseWriter implements MappingWriter {
         }
         return "@PostMapping(\"" + getUrlName(methodName) + "\")";
     }
+
 
 
     private boolean isAvailableGetOrDeleteMappingForParameters(Parameter[] parameters) {

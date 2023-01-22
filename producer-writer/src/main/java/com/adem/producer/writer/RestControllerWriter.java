@@ -1,7 +1,5 @@
 package com.adem.producer.writer;
 
-import com.adem.common.model.User;
-import com.adem.common.service.UserService;
 import com.adem.producer.writer.model.ControllerResponse;
 import com.adem.producer.writer.model.RestWriterConfiguration;
 import com.adem.producer.writer.process.ControllerWriter;
@@ -10,22 +8,21 @@ import com.adem.producer.writer.process.impl.MappingWriterImpl;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
-import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.rmi.UnexpectedException;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
+import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
 public class RestControllerWriter {
     private final RestWriterConfiguration writerConf;
 
-    public RestControllerWriter(RestWriterConfiguration writerConf) throws IOException{
+    public RestControllerWriter(RestWriterConfiguration writerConf) throws IOException {
         validateConfiguration(writerConf);
         this.writerConf = writerConf;
     }
@@ -44,7 +41,7 @@ public class RestControllerWriter {
 
         ControllerWriter controllerWriter = new ControllerWriterImpl(writerConf, new MappingWriterImpl(writerConf));
 
-        Class<?> serviceClass = UserService.class;
+        Class<?> serviceClass = writerConf.getServiceClass();
         String packageName = writerConf.getControllerPackageName();
 
 
@@ -72,21 +69,21 @@ public class RestControllerWriter {
     }
 
 
-    private void validateConfiguration(RestWriterConfiguration configuration) throws IOException{
+    private void validateConfiguration(RestWriterConfiguration configuration) throws IOException {
         if (configuration == null) {
             throw new NullPointerException("Configuration must not be null");
         }
         validateServiceClass(configuration.getServiceClass());
-        validateExportStatus(configuration.isExportJavaFileToPackage(),configuration.getControllerPath());
+        validateExportStatus(configuration.isExportJavaFileToPackage(), configuration.getControllerPath());
     }
 
-    private static void validateExportStatus(boolean isExportJavaFileToPackage,String controllerPath) throws IOException{
-        if(!isExportJavaFileToPackage){
+    private static void validateExportStatus(boolean isExportJavaFileToPackage, String controllerPath) throws IOException {
+        if (!isExportJavaFileToPackage) {
             return;
         }
         File file = new File(controllerPath);
-        if(!file.exists()){
-            throw new FileNotFoundException(controllerPath+" not found or accessible!");
+        if (!file.exists()) {
+            throw new FileNotFoundException(controllerPath + " not found or accessible!");
         }
     }
 
@@ -103,13 +100,15 @@ public class RestControllerWriter {
         if (serviceClass.isEnum()) {
             throw new IllegalArgumentException("Service class must not be enum");
         }
-        if(serviceClass.isArray()){
+        if (serviceClass.isArray()) {
             throw new IllegalArgumentException("Service class must not be array");
         }
-    }
-
-    public static void main(String[] args) {
-        validateServiceClass(User.class);
-        validateServiceClass(List.class);
+        if(serviceClass.getGenericSuperclass() instanceof ParameterizedType){
+            Type[] arguments = ((ParameterizedType) serviceClass.getGenericSuperclass()).getActualTypeArguments();
+            if(arguments.length>0){
+                throw new IllegalArgumentException("Service super class is generic. Not supported  "+serviceClass.getGenericSuperclass().getTypeName());
+            }
+        }
+        System.out.println();
     }
 }
