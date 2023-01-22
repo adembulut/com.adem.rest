@@ -27,4 +27,5 @@ public interface UserService {
     void deleteUserById(AuthenticationUser authenticationUser, long id);
 
     School getSchool(AuthenticationUser auth, Map<String, String> userMapping);
+    School[] getSchoolArray(AuthenticationUser authenticationUser);
 }
