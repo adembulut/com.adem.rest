@@ -4,6 +4,8 @@ import com.adem.common.model.AuthenticationUser;
 import com.adem.common.model.School;
 import com.adem.common.model.User;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -28,4 +30,5 @@ public interface UserService {
 
     School getSchool(AuthenticationUser auth, Map<String, String> userMapping);
     School[] getSchoolArray(AuthenticationUser authenticationUser);
+    Map<List<Map<ArrayList<String>,Object>>, HashSet<Long>> getMultiGenericResponse();
 }

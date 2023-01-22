@@ -5,6 +5,9 @@ import com.adem.common.model.School;
 import com.adem.common.model.User;
 import com.adem.common.service.UserService;
 import com.google.gson.Gson;
+import java.io.Serial;
+import java.util.Arrays;
+import java.util.HashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -110,5 +113,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public School[] getSchoolArray(AuthenticationUser authenticationUser) {
         return new School[]{new School(),new School(),new School()};
+    }
+
+    @Override
+    public Map<List<Map<ArrayList<String>, Object>>, HashSet<Long>> getMultiGenericResponse() {
+        Map<List<Map<ArrayList<String>, Object>>, HashSet<Long>> response = new HashMap<>();
+        List<Map<ArrayList<String>, Object>> responseKey = new ArrayList<>();
+        responseKey.add(new HashMap<>(){
+            @Serial
+            private static final long serialVersionUID = -8412030975842947007L;
+
+            {put(new ArrayList<>(),"adem");}});
+        response.put(responseKey,new HashSet<>(Arrays.asList(123L,123L)));
+        return response;
     }
 }
