@@ -8,6 +8,7 @@ import com.adem.producer.writer.process.ControllerWriter;
 import com.adem.producer.writer.process.MappingWriter;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,8 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
             throw new MethodNotAvailableException("Controller not created!", e);
         }
         Map<String, Object> modelMap = new HashMap<>();
-        modelMap.put("importSet", getImportList(rawImportSet));
+        List<Class<?>> finalImportList = getImportList(rawImportSet).stream().sorted(Comparator.comparing(Class::getName)).collect(Collectors.toList());
+        modelMap.put("importSet", finalImportList);
         modelMap.put("className", serviceClass.getSimpleName());
         modelMap.put("baseUrl", baseUrl);
         modelMap.put("serviceFieldName", fieldName);
@@ -106,6 +108,9 @@ public class ControllerWriterImpl extends BaseWriter implements ControllerWriter
         List<Class<?>> finaList = new ArrayList<>();
         for (Class<?> aClass : raw) {
             if (aClass == null || aClass.isPrimitive()) {
+                continue;
+            }
+            if(aClass.getPackageName().startsWith("java.lang")){
                 continue;
             }
             finaList.add(aClass);
