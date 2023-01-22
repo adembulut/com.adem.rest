@@ -106,4 +106,9 @@ public class UserServiceImpl implements UserService {
         school.setAddressList(new ArrayList<>());
         return school;
     }
+
+    @Override
+    public School[] getSchoolArray(AuthenticationUser authenticationUser) {
+        return new School[]{new School(),new School(),new School()};
+    }
 }
