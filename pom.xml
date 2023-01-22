@@ -18,7 +18,6 @@
         <module>common</module>
         <module>producer</module>
         <module>producer-writer</module>
-        <module>writer-test</module>
     </modules>
     <packaging>pom</packaging>
 
